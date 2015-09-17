@@ -98,6 +98,11 @@ class TestUrl(unittest.TestCase):
         o = {'a': {'b': '0', '0': '0'}}
         self.assertEqual(decodeQueryString(s), o)
 
+        # String with '=' character
+        s = 'a=b=&b=c'
+        o = {'a': 'b=', 'b': 'c'}
+        self.assertEqual(decodeQueryString(s), o)
+
     def test_url_decodeQueryStringDegenerate(self):
 
         def assertDecodeError(s, err):

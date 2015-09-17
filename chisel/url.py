@@ -73,7 +73,7 @@ def decodeQueryString(queryString, encoding='utf-8'):
             continue
 
         # Split the key/value string
-        keysValue = keysValueString.split('=')
+        keysValue = keysValueString.split('=', 1)
         if len(keysValue) != 2:
             raise ValueError("Invalid key/value pair '" + keysValueString + "'")
         value = urllib_parse_unquote(keysValue[1], encoding=encoding)
