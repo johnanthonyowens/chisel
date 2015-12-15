@@ -23,6 +23,7 @@
 from .compat import basestring_, iteritems, long_
 
 from datetime import date, datetime, timedelta, tzinfo
+from math import isnan, isinf
 from time import altzone as time_altzone, daylight as time_daylight, localtime as time_localtime, \
     mktime as time_mktime, timezone as time_timezone, tzname as time_tzname
 import re
@@ -562,6 +563,8 @@ class _TypeFloat(object):
         elif mode == VALIDATE_QUERY_STRING and isinstance(value, basestring_):
             try:
                 valueX = float(value)
+                if isnan(valueX) or isinf(valueX):
+                    raise ValueError()
             except:
                 raise ValidationError.memberError(self, value, _member)
         else:
