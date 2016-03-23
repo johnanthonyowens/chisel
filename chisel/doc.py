@@ -472,12 +472,14 @@ def _attributeDom(ul, lhs, op, rhs):
 
 
 # Type attributes HTML helper
-def _addTypeAttr(parent, type_, attr, isOptional):
+def _addTypeAttr(parent, type_, attr, isOptional, isNullable):
 
     # Add attribute DOM elements
     ul = parent.addChild('ul', _class='chsl-constraint-list')
     if isOptional:
         _attributeDom(ul, 'optional', None, None)
+    if isNullable:
+        _attributeDom(ul, 'nullable', None, None)
     typeName = 'array' if isinstance(type_, TypeArray) else ('dict' if isinstance(type_, TypeDict) else 'value')
     for lhs, op, rhs in _attributeList(attr, typeName, 'len(' + typeName + ')'):
         _attributeDom(ul, lhs, op, rhs)
@@ -541,7 +543,7 @@ def _typedefSection(parent, type_):
     # Typedef type/attr rows
     tr = table.addChild('tr')
     _addTypeName(tr.addChild('td'), type_.type)
-    _addTypeAttr(tr.addChild('td'), type_.type, type_.attr, False)
+    _addTypeAttr(tr.addChild('td'), type_.type, type_.attr, False, False)
 
 
 # Struct section helper
@@ -582,7 +584,7 @@ def _structSection(parent, type_, titleTag=None, title=None, emptyMessage=None):
             tr = table.addChild('tr')
             tr.addChild('td').addChild(member.name, isText=True, isInline=True)
             _addTypeName(tr.addChild('td'), member.type)
-            _addTypeAttr(tr.addChild('td'), member.type, member.attr, member.isOptional)
+            _addTypeAttr(tr.addChild('td'), member.type, member.attr, member.isOptional, member.isNullable)
             if hasDescription:
                 _addDocText(tr.addChild('td'), member.doc)
 

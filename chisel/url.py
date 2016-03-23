@@ -52,6 +52,8 @@ def _encodeQueryString_flatten(o, parent, encoding, topLevel=False):
             ostr = str(JsonUUID(o)).strip('"')
         elif isinstance(o, bool):
             ostr = 'true' if o else 'false'
+        elif o is None:
+            ostr = 'null'
         else:
             ostr = o if isinstance(o, basestring_) else str(o)
         yield (parent, urllib_parse_quote(ostr, encoding=encoding))

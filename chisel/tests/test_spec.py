@@ -36,7 +36,11 @@ class TestSpecParseSpec(unittest.TestCase):
         self.assertTrue(isinstance(structType, chisel.model.TypeStruct))
         self.assertEqual(len(structType.members), len(members))
         for ixMember in chisel.compat.xrange_(0, len(members)):
-            name, typeOrType, isOptional = members[ixMember]
+            if len(members[ixMember]) == 4:
+                name, typeOrType, isOptional, isNullable = members[ixMember]
+            else:
+                name, typeOrType, isOptional = members[ixMember]
+                isNullable = False
             self.assertEqual(structType.members[ixMember].name, name)
             if isinstance(typeOrType, (chisel.model.TypeStruct,
                                        chisel.model.TypeArray,
@@ -47,6 +51,7 @@ class TestSpecParseSpec(unittest.TestCase):
             else:
                 self.assertTrue(isinstance(structType.members[ixMember].type, typeOrType))
             self.assertEqual(structType.members[ixMember].isOptional, isOptional)
+            self.assertEqual(structType.members[ixMember].isNullable, isNullable)
 
     # Helper method to assert struct type member properties (by struct name)
     def assertStructByName(self, parser, typeName, members):
@@ -100,7 +105,7 @@ struct MyStruct2
     int a
     optional \\
         float b
-    string \\
+    nullable string \\
         c
     bool d
     int[] e
@@ -109,7 +114,7 @@ struct MyStruct2
     optional datetime h
     optional uuid i
     optional MyEnum : MyStruct{} j
-    optional date k
+    optional nullable date k
 
 # This is a union
 union MyUnion
@@ -163,7 +168,7 @@ action MyAction4 \\
         self.assertStructByName(parser, 'MyStruct2',
                                 (('a', chisel.model._TypeInt, False),
                                  ('b', chisel.model._TypeFloat, True),
-                                 ('c', chisel.model._TypeString, False),
+                                 ('c', chisel.model._TypeString, False, True),
                                  ('d', chisel.model._TypeBool, False),
                                  ('e', chisel.model.TypeArray, False),
                                  ('f', chisel.model.TypeArray, True),
@@ -171,7 +176,7 @@ action MyAction4 \\
                                  ('h', chisel.model._TypeDatetime, True),
                                  ('i', chisel.model._TypeUuid, True),
                                  ('j', chisel.model.TypeDict, True),
-                                 ('k', chisel.model._TypeDate, True)))
+                                 ('k', chisel.model._TypeDate, True, True)))
         self.assertStructByName(parser, 'MyUnion',
                                 (('a', chisel.model._TypeInt, True),
                                  ('b', chisel.model._TypeString, True)))
@@ -359,6 +364,20 @@ struct MyStruct2
         self.assertTrue(parser.types['MyStruct'].members[0].attr is not None)
 
         self.assertStructByName(parser, 'MyStruct2', ())
+
+    def test_typeref_invalid_nullable_order(self): # pylint: disable=invalid-name
+
+        parser = SpecParser()
+        try:
+            parser.parseString('''\
+struct MyStruct
+    nullable optional int a
+''')
+        except SpecParserError as exc:
+            self.assertEqual(str(exc), """\
+:2: error: Syntax error""")
+        else:
+            self.fail()
 
     def test_spec_typeref_invalid_attr(self):
 

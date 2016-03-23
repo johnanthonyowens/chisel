@@ -458,6 +458,7 @@ class TestModelStructValidation(unittest.TestCase):
         self.assertEqual(t.members[0].name, 'a')
         self.assertTrue(isinstance(t.members[0].type, TypeStruct))
         self.assertEqual(t.members[0].isOptional, False)
+        self.assertEqual(t.members[0].isNullable, False)
         self.assertEqual(t.members[0].doc, [])
 
     # Test union type construction
@@ -474,6 +475,7 @@ class TestModelStructValidation(unittest.TestCase):
         self.assertEqual(t.members[0].name, 'a')
         self.assertTrue(isinstance(t.members[0].type, TypeStruct))
         self.assertEqual(t.members[0].isOptional, True)
+        self.assertEqual(t.members[0].isNullable, False)
         self.assertEqual(t.members[0].doc, [])
 
     # All validation modes - success
@@ -553,6 +555,95 @@ class TestModelStructValidation(unittest.TestCase):
                 self.assertTrue(o is not o2)
                 self.assertTrue(isinstance(o2, dict))
             self.assertEqual(o2, {'a': 7})
+
+    # All validation modes - nullable member present and non-null
+    def test_validation_nullable_present_non_null(self): # pylint: disable=invalid-name
+
+        type_ = TypeStruct()
+        type_.addMember('a', TypeInt())
+        type_.addMember('b', TypeString(), isNullable=True)
+
+        obj = {'a': 7, 'b': 'abc'}
+        for mode in ALL_VALIDATION_MODES:
+            obj2 = type_.validate(obj, mode)
+            if mode in IMMUTABLE_VALIDATION_MODES:
+                self.assertTrue(obj is obj2)
+            else:
+                self.assertTrue(obj is not obj2)
+                self.assertTrue(isinstance(obj2, dict))
+            self.assertEqual(obj2, {'a': 7, 'b': 'abc'})
+
+    # All validation modes - nullable member present and null
+    def test_validation_nullable_present_null(self): # pylint: disable=invalid-name
+
+        type_ = TypeStruct()
+        type_.addMember('a', TypeInt())
+        type_.addMember('b', TypeString(), isNullable=True)
+
+        obj = {'a': 7, 'b': None}
+        for mode in ALL_VALIDATION_MODES:
+            obj2 = type_.validate(obj, mode)
+            if mode in IMMUTABLE_VALIDATION_MODES:
+                self.assertTrue(obj is obj2)
+            else:
+                self.assertTrue(obj is not obj2)
+                self.assertTrue(isinstance(obj2, dict))
+            self.assertEqual(obj2, {'a': 7, 'b': None})
+
+    # All validation modes - nullable member present and 'null' string for non-string member
+    def test_validation_nullable_present_null_string(self): # pylint: disable=invalid-name
+
+        type_ = TypeStruct()
+        type_.addMember('a', TypeInt())
+        type_.addMember('b', TypeInt(), isNullable=True)
+
+        obj = {'a': 7, 'b': 'null'}
+        for mode in ALL_VALIDATION_MODES:
+            if mode == VALIDATE_QUERY_STRING:
+                obj2 = type_.validate(obj, mode)
+                self.assertTrue(obj is not obj2)
+                self.assertTrue(isinstance(obj2, dict))
+                self.assertEqual(obj2, {'a': 7, 'b': None})
+            else:
+                try:
+                    type_.validate(obj, mode)
+                except ValidationError as exc:
+                    self.assertEqual(str(exc), "Invalid value 'null' (type 'str') for member 'b', expected type 'int'")
+                else:
+                    self.fail()
+
+    # All validation modes - nullable member present and 'null' string for string member
+    def test_validation_nullable_present_null_string_type(self): # pylint: disable=invalid-name
+
+        type_ = TypeStruct()
+        type_.addMember('a', TypeInt())
+        type_.addMember('b', TypeString(), isNullable=True)
+
+        obj = {'a': 7, 'b': 'null'}
+        for mode in ALL_VALIDATION_MODES:
+            obj2 = type_.validate(obj, mode)
+            if mode in IMMUTABLE_VALIDATION_MODES:
+                self.assertTrue(obj is obj2)
+            else:
+                self.assertTrue(obj is not obj2)
+                self.assertTrue(isinstance(obj2, dict))
+            self.assertEqual(obj2, {'a': 7, 'b': 'null'})
+
+    # All validation modes - nullable member missing
+    def test_validation_nullable_missing(self): # pylint: disable=invalid-name
+
+        type_ = TypeStruct()
+        type_.addMember('a', TypeInt())
+        type_.addMember('b', TypeString(), isNullable=True)
+
+        obj = {'a': 7}
+        for mode in ALL_VALIDATION_MODES:
+            try:
+                type_.validate(obj, mode)
+            except ValidationError as exc:
+                self.assertEqual(str(exc), "Required member 'b' missing")
+            else:
+                self.fail()
 
     # All validation modes - member with attributes - valid
     def test_model_struct_validation_member_attributes_valid(self):

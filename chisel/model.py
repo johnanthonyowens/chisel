@@ -274,12 +274,13 @@ class Typedef(object):
 
 # Struct member
 class StructMember(object):
-    __slots__ = ('name', 'type', 'isOptional', 'attr', 'doc')
+    __slots__ = ('name', 'type', 'isOptional', 'isNullable', 'attr', 'doc')
 
-    def __init__(self, name, type_, isOptional=False, attr=None, doc=None):
+    def __init__(self, name, type_, isOptional=False, isNullable=False, attr=None, doc=None):
         self.name = name
         self.type = type_
         self.isOptional = isOptional
+        self.isNullable = isNullable
         self.attr = attr
         self.doc = [] if doc is None else doc
 
@@ -295,8 +296,8 @@ class TypeStruct(object):
         self._membersDict = {}
         self.doc = [] if doc is None else doc
 
-    def addMember(self, name, type_, isOptional=False, attr=None, doc=None):
-        member = StructMember(name, type_, isOptional or self.isUnion, attr, doc)
+    def addMember(self, name, type_, isOptional=False, isNullable=False, attr=None, doc=None):
+        member = StructMember(name, type_, isOptional or self.isUnion, isNullable, attr, doc)
         self.members.append(member)
         self._membersDict[name] = member
         return member
@@ -330,7 +331,11 @@ class TypeStruct(object):
             member = membersDict.get(memberName)
             if member is None:
                 raise ValidationError("Unknown member '" + ValidationError.memberSyntax((_member, memberName)) + "'")
-            memberValueX = membersDict[memberName].type.validate(memberValue, mode, memberPath)
+            if member.isNullable and (memberValue is None or \
+                    (mode == VALIDATE_QUERY_STRING and not isinstance(member.type, _TypeString) and memberValue == 'null')):
+                memberValueX = None
+            else:
+                memberValueX = member.type.validate(memberValue, mode, memberPath)
             if member.attr is not None:
                 member.attr.validate(memberValueX, memberPath)
             if valueCopy is not None:
