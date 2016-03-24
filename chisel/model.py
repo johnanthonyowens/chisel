@@ -336,8 +336,8 @@ class TypeStruct(object):
                 memberValueX = None
             else:
                 memberValueX = member.type.validate(memberValue, mode, memberPath)
-            if member.attr is not None:
-                member.attr.validate(memberValueX, memberPath)
+                if member.attr is not None:
+                    member.attr.validate(memberValueX, memberPath)
             if valueCopy is not None:
                 valueCopy[memberName] = memberValueX
 
