@@ -41,6 +41,10 @@ from .doc import \
     DocPage, \
     Element
 
+from .doc_api import \
+    DocIndexApi, \
+    DocRequestApi
+
 from .model import \
     ValidationError, \
     VALIDATE_DEFAULT, \
@@ -54,6 +58,9 @@ from .request import \
 from .spec import \
     SpecParser, \
     SpecParserError
+
+from .static_request import \
+    StaticRequest
 
 from .url import \
     decode_query_string, \
